@@ -1,4 +1,6 @@
+import asyncio
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -6,122 +8,69 @@ import httpx
 import trafilatura
 from markitdown import MarkItDown
 
-SUPPORTED_EXTENSIONS = {
-    ".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",
-    ".html", ".htm", ".txt", ".csv", ".json", ".xml", ".md",
-    ".epub", ".zip", ".odt", ".rtf",
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif",
-    ".webp", ".svg",
-    ".mp3", ".wav", ".m4a", ".flac", ".ogg",
-    ".mp4", ".webm", ".mov", ".avi", ".mkv",
+from api.converters.audio import convert_audio
+from api.converters.document import convert_document
+from api.converters.image import convert_image
+from api.converters.pdf import convert_pdf
+
+ENGINES: dict[str, frozenset[str]] = {
+    "document": frozenset(
+        {
+            ".docx",
+            ".doc",
+            ".pptx",
+            ".ppt",
+            ".xlsx",
+            ".xls",
+            ".html",
+            ".htm",
+            ".txt",
+            ".csv",
+            ".json",
+            ".xml",
+            ".md",
+            ".epub",
+            ".zip",
+            ".odt",
+            ".odp",
+            ".ods",
+            ".rtf",
+        }
+    ),
+    "pdf": frozenset({".pdf"}),
+    "image": frozenset(
+        {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".bmp",
+            ".tiff",
+            ".tif",
+            ".webp",
+            ".svg",
+        }
+    ),
+    "audio": frozenset({".mp3", ".wav", ".m4a", ".flac", ".ogg"}),
 }
 
-md = MarkItDown()
+SUPPORTED_EXTENSIONS: frozenset[str] = frozenset().union(*ENGINES.values())
+
+_md_base: MarkItDown | None = None
 
 
-def _convert_document(file_path: str) -> str:
-    try:
-        return md.convert(file_path).text_content
-    except Exception:
-        return _convert_document_fallback(file_path)
+def get_base_md() -> MarkItDown:
+    global _md_base
+    if _md_base is None:
+        _md_base = MarkItDown()
+    return _md_base
 
 
-def _convert_document_fallback(file_path: str) -> str:
-    path = Path(file_path)
-    ext = path.suffix.lower()
-    if ext == ".odt":
-        import zipfile
-        import xml.etree.ElementTree as ET
-
-        with zipfile.ZipFile(file_path) as z:
-            content = z.read("content.xml")
-        root = ET.fromstring(content)
-        ns = {"text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0"}
-        texts = []
-        for p in root.iter("{urn:oasis:names:tc:opendocument:xmlns:text:1.0}p"):
-            t = "".join(p.itertext())
-            if t.strip():
-                texts.append(t)
-        return "\n\n".join(texts) if texts else f"# Document: {path.name}"
-    return f"# Document: {path.name}"
-
-
-def _convert_image(file_path: str) -> str:
-    try:
-        from PIL import Image
-
-        img = Image.open(file_path)
-        parts = [f"# Image: {Path(file_path).name}"]
-        parts.append(f"- Format: {img.format}")
-        parts.append(f"- Size: {img.size[0]}x{img.size[1]}")
-        parts.append(f"- Mode: {img.mode}")
-        info = img.info
-        if info.get("description"):
-            parts.append(f"- Description: {info['description']}")
-        return "\n".join(parts)
-    except Exception:
-        size = os.path.getsize(file_path)
-        parts = [f"# Image: {Path(file_path).name}"]
-        parts.append(f"- File size: {size} bytes")
-        return "\n".join(parts)
-
-
-def _convert_audio(file_path: str) -> str:
-    try:
-        from tinytag import TinyTag
-
-        tag = TinyTag.get(file_path)
-        parts = [f"# Audio: {Path(file_path).name}"]
-        if tag.title:
-            parts.append(f"- Title: {tag.title}")
-        if tag.artist:
-            parts.append(f"- Artist: {tag.artist}")
-        if tag.album:
-            parts.append(f"- Album: {tag.album}")
-        if tag.duration:
-            parts.append(f"- Duration: {tag.duration:.1f}s")
-        if tag.bitrate:
-            parts.append(f"- Bitrate: {tag.bitrate} kbps")
-        if tag.samplerate:
-            parts.append(f"- Sample Rate: {tag.samplerate} Hz")
-        return "\n".join(parts)
-    except Exception:
-        size = os.path.getsize(file_path)
-        parts = [f"# Audio: {Path(file_path).name}"]
-        parts.append(f"- File size: {size} bytes")
-        return "\n".join(parts)
-
-
-def _convert_video(file_path: str) -> str:
-    try:
-        from tinytag import TinyTag
-
-        tag = TinyTag.get(file_path)
-        parts = [f"# Video: {Path(file_path).name}"]
-        if tag.title:
-            parts.append(f"- Title: {tag.title}")
-        if tag.duration:
-            parts.append(f"- Duration: {tag.duration:.1f}s")
-        return "\n".join(parts)
-    except Exception:
-        size = os.path.getsize(file_path)
-        parts = [f"# Video: {Path(file_path).name}"]
-        parts.append(f"- File size: {size} bytes")
-        return "\n".join(parts)
-
-
-ENGINES: dict[str, list] = {
-    "document": [
-        ".pdf", ".docx", ".doc", ".pptx", ".ppt", ".xlsx", ".xls",
-        ".html", ".htm", ".txt", ".csv", ".json", ".xml", ".md",
-        ".epub", ".zip", ".odt", ".rtf",
-    ],
-    "image": [
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif",
-        ".webp", ".svg",
-    ],
-    "audio": [".mp3", ".wav", ".m4a", ".flac", ".ogg"],
-    "video": [".mp4", ".webm", ".mov", ".avi", ".mkv"],
+_HANDLERS: dict[str, callable] = {
+    "document": convert_document,
+    "pdf": convert_pdf,
+    "image": convert_image,
+    "audio": convert_audio,
 }
 
 
@@ -132,7 +81,23 @@ def _get_engine(ext: str) -> str | None:
     return None
 
 
-def convert_file(file_path: str) -> str:
+def _normalize_youtube_url(url: str) -> str | None:
+    patterns = [
+        r"(?:https?://)?(?:www\.)?youtube\.com/watch\?.*v=([\w-]{11})",
+        r"(?:https?://)?youtu\.be/([\w-]{11})",
+        r"(?:https?://)?(?:www\.)?youtube\.com/embed/([\w-]{11})",
+        r"(?:https?://)?(?:www\.)?youtube\.com/shorts/([\w-]{11})",
+        r"(?:https?://)?(?:www\.)?youtube\.com/live/([\w-]{11})",
+    ]
+    for pattern in patterns:
+        m = re.search(pattern, url)
+        if m:
+            vid = m.group(1)
+            return f"https://www.youtube.com/watch?v={vid}"
+    return None
+
+
+def convert_file(file_path: str, language: str = "en-US") -> str:
     path = Path(file_path)
     ext = path.suffix.lower()
     if ext not in SUPPORTED_EXTENSIONS:
@@ -140,19 +105,26 @@ def convert_file(file_path: str) -> str:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
     engine = _get_engine(ext)
-    if engine == "document":
-        return _convert_document(file_path)
-    elif engine == "image":
-        return _convert_image(file_path)
-    elif engine == "audio":
-        return _convert_audio(file_path)
-    elif engine == "video":
-        return _convert_video(file_path)
-    raise ValueError(f"Unknown engine for {ext}")
+    handler = _HANDLERS[engine]
+    kw: dict = {}
+    if engine == "audio":
+        kw["language"] = language
+    return handler(file_path, **kw)
 
 
-async def convert_url(url: str) -> str:
-    downloaded = trafilatura.fetch_url(url)
+async def convert_url(url: str, language: str = "en-US") -> str:
+    yt_url = _normalize_youtube_url(url)
+    if yt_url:
+        url = yt_url
+
+    try:
+        result = get_base_md().convert(url).markdown
+        if result.strip():
+            return result.strip()
+    except Exception:
+        pass
+
+    downloaded = await asyncio.to_thread(trafilatura.fetch_url, url)
     if downloaded:
         result = trafilatura.extract(downloaded, output_format="markdown")
         if result:
@@ -161,15 +133,12 @@ async def convert_url(url: str) -> str:
         async with httpx.AsyncClient(follow_redirects=True, timeout=30) as client:
             response = await client.get(url)
             response.raise_for_status()
-            content = response.text
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".html", delete=False
-            ) as f:
-                f.write(content)
-                tmp_path = f.name
-            try:
-                return _convert_document(tmp_path)
-            finally:
-                os.unlink(tmp_path)
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
+            f.write(response.text)
+            tmp_path = f.name
+        try:
+            return convert_document(tmp_path)
+        finally:
+            os.unlink(tmp_path)
     except httpx.HTTPError as e:
         raise ValueError(f"Failed to fetch URL: {e}")

@@ -1,66 +1,74 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 from api.converter import convert_file, convert_url
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
-@pytest.mark.parametrize("filename", [
-    "sample.pdf",
-    "sample.docx",
-    "sample.pptx",
-    "sample.xlsx",
-    "sample.html",
-    "sample.txt",
-    "sample.csv",
-    "sample.json",
-    "sample.xml",
-    "sample.md",
-    "sample.epub",
-    "sample.odt",
-    "sample.rtf",
-])
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "sample.pdf",
+        "sample.docx",
+        "sample.doc",
+        "sample.pptx",
+        "sample.ppt",
+        "sample.xlsx",
+        "sample.xls",
+        "sample.html",
+        "sample.htm",
+        "sample.txt",
+        "sample.csv",
+        "sample.json",
+        "sample.xml",
+        "sample.md",
+        "sample.epub",
+        "sample.odt",
+        "sample.odp",
+        "sample.ods",
+        "sample.rtf",
+        "sample.zip",
+    ],
+)
 def test_convert_document_to_markdown(filename):
     result = convert_file(str(FIXTURES_DIR / filename))
     assert isinstance(result, str)
     assert len(result) > 0
 
 
-@pytest.mark.parametrize("filename", [
-    "sample.png",
-    "sample.jpg",
-    "sample.webp",
-    "sample.gif",
-    "sample.bmp",
-    "sample.tiff",
-    "sample.svg",
-])
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "sample.png",
+        "sample.jpg",
+        "sample.jpeg",
+        "sample.webp",
+        "sample.gif",
+        "sample.bmp",
+        "sample.tiff",
+        "sample.tif",
+        "sample.svg",
+    ],
+)
 def test_convert_image_to_markdown(filename):
     result = convert_file(str(FIXTURES_DIR / filename))
     assert isinstance(result, str)
     assert len(result) > 0
 
 
-@pytest.mark.parametrize("filename", [
-    "sample.mp3",
-    "sample.wav",
-    "sample.flac",
-    "sample.m4a",
-    "sample.ogg",
-])
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "sample.mp3",
+        "sample.wav",
+        "sample.flac",
+        "sample.m4a",
+        "sample.ogg",
+    ],
+)
 def test_convert_audio_to_markdown(filename):
-    result = convert_file(str(FIXTURES_DIR / filename))
-    assert isinstance(result, str)
-    assert len(result) > 0
-
-
-@pytest.mark.parametrize("filename", [
-    "sample.mp4",
-    "sample.webm",
-    "sample.mov",
-    "sample.avi",
-])
-def test_convert_video_to_markdown(filename):
     result = convert_file(str(FIXTURES_DIR / filename))
     assert isinstance(result, str)
     assert len(result) > 0

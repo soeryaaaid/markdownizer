@@ -1,4 +1,5 @@
 import os
+
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
 
@@ -22,6 +23,9 @@ def verify_api_key(api_key: str | None) -> bool:
 
 
 async def require_api_key(api_key: str | None = Security(api_key_header)):
+    valid_keys = _get_valid_keys()
+    if not valid_keys:
+        return api_key
     if not verify_api_key(api_key):
         raise HTTPException(status_code=403, detail="Invalid or missing API key")
     return api_key

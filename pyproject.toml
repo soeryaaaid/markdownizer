@@ -9,6 +9,11 @@ dependencies = [
     "trafilatura>=2.1.0",
     "httpx>=0.28.0",
     "python-multipart>=0.0.20",
+    "pymupdf4llm>=1.28.0",
+    "odfpy>=1.4.1",
+    "google-genai>=2.14.0",
+    "striprtf>=0.0.32",
+    "cairosvg>=2.9.0",
 ]
 
 [project.optional-dependencies]
@@ -16,7 +21,15 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
+    "ruff>=0.16.0",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
 
 [tool.vercel]
 entrypoint = "api.index:app"
