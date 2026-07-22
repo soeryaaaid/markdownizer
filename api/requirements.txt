@@ -1,0 +1,6 @@
+fastapi>=0.139.2
+pydantic>=2.13.4
+markitdown[all]>=0.1.6
+trafilatura>=2.1.0
+httpx>=0.28.0
+python-multipart>=0.0.20
