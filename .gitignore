@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+node_modules/
+.next/
+.pytest_cache/
+*.egg-info/
+dist/
+AGENTS.md
+scripts/
+tests/fixtures/
