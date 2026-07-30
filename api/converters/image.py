@@ -17,12 +17,7 @@ def convert_image(file_path: str) -> str:
 
         client = genai.Client(api_key=api_key)
         data: bytes | None = None
-        if ext == ".svg":
-            import cairosvg
-
-            data = cairosvg.svg2png(url=file_path)
-            mime = "image/png"
-        elif mime in {"image/bmp", "image/tiff"}:
+        if ext in (".bmp", ".tiff", ".tif"):
             from PIL import Image
 
             img = Image.open(file_path)

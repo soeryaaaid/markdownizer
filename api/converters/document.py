@@ -37,6 +37,16 @@ def _convert_json(file_path: str) -> str | None:
         return None
 
 
+def _convert_txt(file_path: str) -> str | None:
+    try:
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            text = f.read()
+        text = text.strip()
+        return text if text else None
+    except Exception:
+        return None
+
+
 def _try_markitdown(file_path: str) -> str | None:
     try:
         from api.converter import get_base_md
@@ -61,6 +71,7 @@ def convert_document(file_path: str) -> str:
         ((".rtf",), _convert_rtf),
         ((".xml",), _convert_xml),
         ((".json",), _convert_json),
+        ((".txt",), _convert_txt),
     ]
     for exts, fn in converters:
         if ext in exts:

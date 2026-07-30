@@ -48,7 +48,6 @@ ENGINES: dict[str, frozenset[str]] = {
             ".tiff",
             ".tif",
             ".webp",
-            ".svg",
         }
     ),
     "audio": frozenset({".mp3", ".wav", ".m4a", ".flac", ".ogg"}),

@@ -49,7 +49,6 @@ def test_convert_document_to_markdown(filename):
         "sample.bmp",
         "sample.tiff",
         "sample.tif",
-        "sample.svg",
     ],
 )
 def test_convert_image_to_markdown(filename):

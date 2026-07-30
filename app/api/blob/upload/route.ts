@@ -27,7 +27,6 @@ const ALLOWED_CONTENT_TYPES = [
   "image/bmp",
   "image/tiff",
   "image/webp",
-  "image/svg+xml",
   "audio/mpeg",
   "audio/wav",
   "audio/mp4",
