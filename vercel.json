@@ -1,0 +1,18 @@
+{
+  "services": {
+    "frontend": {
+      "root": ".",
+      "framework": "nextjs"
+    },
+    "api": {
+      "root": ".",
+      "entrypoint": "api.index:app",
+      "framework": "fastapi"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/blob/upload", "destination": { "service": "frontend" } },
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}
