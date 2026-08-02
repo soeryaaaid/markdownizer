@@ -17,9 +17,7 @@ ENGINES: dict[str, frozenset[str]] = {
     "document": frozenset(
         {
             ".docx",
-            ".doc",
             ".pptx",
-            ".ppt",
             ".xlsx",
             ".xls",
             ".html",

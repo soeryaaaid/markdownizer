@@ -4,7 +4,7 @@ import { fetchFile } from "@ffmpeg/util"
 let ffmpeg: FFmpeg | null = null
 let loading: Promise<void> | null = null
 
-const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"])
+export const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".mkv"])
 
 function getExt(name: string) {
   const i = name.lastIndexOf(".")

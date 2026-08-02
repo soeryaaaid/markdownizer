@@ -1,11 +1,16 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { ArrowRight, Copy, Check, Settings } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { File01Icon, LinkSquare02Icon } from "@hugeicons/core-free-icons"
+import {
+  CheckIcon,
+  Copy01Icon,
+  File01Icon,
+  LinkSquare02Icon,
+  Settings01Icon,
+} from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,7 +20,7 @@ import { CollapsibleSidebar, CollapsibleSidebarHeader, CollapsibleSidebarBody } 
 import { SettingsPanel } from "@/components/settings-panel"
 import { Header } from "@/components/Header"
 import { Toaster, toast } from "sonner"
-import { isVideo, extractAudio, preloadFfmpeg, getVideoDuration } from "@/lib/extract-audio"
+import { isVideo, VIDEO_EXTS, extractAudio, preloadFfmpeg, getVideoDuration } from "@/lib/extract-audio"
 import { uploadToBlob } from "@/lib/blob-upload"
 import { loadSettings, saveSettings, type AppSettings } from "@/lib/settings"
 import { useEffect } from "react"
@@ -29,6 +34,18 @@ const API =
     : ""
 
 const MAX_DIRECT_UPLOAD = 4.5 * 1024 * 1024
+
+const SUPPORTED_EXTENSIONS = new Set([
+  // documents
+  ".docx", ".pptx", ".xlsx", ".xls", ".html", ".htm", ".txt", ".csv",
+  ".json", ".xml", ".md", ".epub", ".zip", ".odt", ".odp", ".ods", ".rtf",
+  // pdf
+  ".pdf",
+  // images
+  ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".webp",
+  // audio
+  ".mp3", ".wav", ".m4a", ".flac", ".ogg",
+])
 
 export default function Page() {
   const [mode, setMode] = useState<Mode>("file")
@@ -58,6 +75,16 @@ export default function Page() {
     setSettings(s)
     saveSettings(s)
   }, [])
+
+  function handleFileSelect(f: File | null) {
+    if (!f) { setFile(null); return }
+    const ext = "." + f.name.split(".").pop()?.toLowerCase()
+    if (!SUPPORTED_EXTENSIONS.has(ext) && !VIDEO_EXTS.has(ext)) {
+      toast.error(`Unsupported format: ${ext || "(no extension)"}`)
+      return
+    }
+    setFile(f)
+  }
 
   function isValidUrl(s: string) {
     try {
@@ -172,7 +199,7 @@ export default function Page() {
       <div className="flex">
         <CollapsibleSidebar side="right" open={sidebarOpen}>
           <CollapsibleSidebarHeader>
-            <Settings className="size-5 shrink-0" />
+            <HugeiconsIcon icon={Settings01Icon} className="size-5 shrink-0" />
             <h2 className="text-sm font-semibold">Settings</h2>
           </CollapsibleSidebarHeader>
           <CollapsibleSidebarBody>
@@ -207,7 +234,7 @@ export default function Page() {
             <CardContent className="space-y-4">
               {mode === "file" ? (
                 <>
-                  <FileUpload value={file} onChange={setFile} />
+                  <FileUpload value={file} onChange={handleFileSelect} />
                   {videoError && (
                     <p className="mt-2 text-sm text-destructive">{videoError}</p>
                   )}
@@ -225,10 +252,7 @@ export default function Page() {
                 {loading ? (
                   "Converting..."
                 ) : (
-                  <>
-                    Convert to Markdown
-                    <ArrowRight className="size-4" />
-                  </>
+                  "Convert to Markdown"
                 )}
               </Button>
             </CardContent>
@@ -248,12 +272,12 @@ export default function Page() {
                     >
                       {copied ? (
                         <>
-                          <Check className="size-3.5" />
+                          <HugeiconsIcon icon={CheckIcon} className="size-3.5" />
                           Copied
                         </>
                       ) : (
                         <>
-                          <Copy className="size-3.5" />
+                          <HugeiconsIcon icon={Copy01Icon} className="size-3.5" />
                           Copy
                         </>
                       )}

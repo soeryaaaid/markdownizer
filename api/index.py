@@ -13,8 +13,8 @@ from api.converter import convert_file, convert_url
 app = FastAPI(
     title="Markdownizer API",
     version="0.1.0",
-    docs_url="/docs",
-    openapi_url="/openapi.json",
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json",
 )
 
 origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")

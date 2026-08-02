@@ -12,9 +12,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
     [
         "sample.pdf",
         "sample.docx",
-        "sample.doc",
         "sample.pptx",
-        "sample.ppt",
         "sample.xlsx",
         "sample.xls",
         "sample.html",

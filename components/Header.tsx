@@ -1,9 +1,9 @@
 "use client"
 
-import { Settings } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Github01Icon } from "@hugeicons/core-free-icons"
+import { ApiIcon, Github01Icon, Settings01Icon } from "@hugeicons/core-free-icons"
 import { useTheme } from "next-themes"
 
 export function Header({
@@ -28,20 +28,25 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-md cursor-pointer"
+        <a
+          href="/api/docs"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="API Docs"
+          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-md cursor-pointer")}
         >
-          <a
-            href="https://github.com/soeryaaaid/markdownizer"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub Repository"
-          >
-            <HugeiconsIcon icon={Github01Icon} className="size-4" />
-          </a>
-        </Button>
+          <HugeiconsIcon icon={ApiIcon} className="size-4" />
+        </a>
+
+        <a
+          href="https://github.com/soeryaaaid/markdownizer"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="GitHub Repository"
+          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "rounded-md cursor-pointer")}
+        >
+          <HugeiconsIcon icon={Github01Icon} className="size-4" />
+        </a>
 
         <Button
           variant="ghost"
@@ -64,11 +69,11 @@ export function Header({
         <Button
           variant="ghost"
           size="icon"
-          className="size-7 cursor-pointer"
+          className="rounded-md cursor-pointer"
           onClick={onSettingsToggle}
           aria-label="Settings"
         >
-          <Settings className="size-4" />
+          <HugeiconsIcon icon={Settings01Icon} className="size-4" />
         </Button>
       </div>
     </header>
