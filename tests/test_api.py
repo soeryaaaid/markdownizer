@@ -74,14 +74,14 @@ async def test_convert_file_endpoint_no_file(client):
 
 @pytest.mark.asyncio
 async def test_openapi_docs_available(client):
-    response = await client.get("/docs")
+    response = await client.get("/api/docs")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
 
 @pytest.mark.asyncio
 async def test_openapi_schema(client):
-    response = await client.get("/openapi.json")
+    response = await client.get("/api/openapi.json")
     assert response.status_code == 200
     schema = response.json()
     assert "paths" in schema

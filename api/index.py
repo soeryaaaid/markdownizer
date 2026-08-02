@@ -3,18 +3,32 @@ import tempfile
 from pathlib import Path
 
 import httpx
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 
 from api.auth import require_api_key
 from api.converter import convert_file, convert_url
+from api.ratelimit import InMemoryRateLimiter
 
 app = FastAPI(
     title="Markdownizer API",
     version="0.1.0",
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
+)
+
+url_limiter = InMemoryRateLimiter(
+    max_requests=int(os.environ.get("RATE_LIMIT_URL_PER_MIN", "30")),
+    window_seconds=60,
+)
+file_limiter = InMemoryRateLimiter(
+    max_requests=int(os.environ.get("RATE_LIMIT_FILE_PER_MIN", "10")),
+    window_seconds=60,
+)
+blob_limiter = InMemoryRateLimiter(
+    max_requests=int(os.environ.get("RATE_LIMIT_BLOB_PER_MIN", "10")),
+    window_seconds=60,
 )
 
 origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
@@ -64,18 +78,22 @@ async def health():
 @app.post("/api/convert/url", response_model=ConvertResponse)
 async def convert_url_endpoint(
     body: ConvertURLRequest,
+    request: Request,
     api_key: str = Depends(require_api_key),
 ):
+    await url_limiter.check_ip(request)
     markdown = await convert_url(body.url)
     return ConvertResponse(markdown=markdown)
 
 
 @app.post("/api/convert/file", response_model=ConvertResponse)
 async def convert_file_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     language: str = Form("en-US"),
     api_key: str = Depends(require_api_key),
 ):
+    await file_limiter.check_ip(request)
     if not file.filename:
         raise HTTPException(status_code=422, detail="No file provided")
     suffix = Path(file.filename).suffix or ".tmp"
@@ -95,8 +113,10 @@ async def convert_file_endpoint(
 @app.post("/api/convert/blob", response_model=ConvertResponse)
 async def convert_blob_endpoint(
     body: ConvertBlobRequest,
+    request: Request,
     api_key: str = Depends(require_api_key),
 ):
+    await blob_limiter.check_ip(request)
     filename = body.filename or body.blob_url.rstrip("/").split("/")[-1]
     ext = Path(filename).suffix or ".tmp"
 
