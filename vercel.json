@@ -12,6 +12,7 @@
   },
   "rewrites": [
     { "source": "/api/blob/upload", "destination": { "service": "frontend" } },
+    { "source": "/api/blob/delete", "destination": { "service": "frontend" } },
     { "source": "/api/(.*)", "destination": { "service": "api" } },
     { "source": "/(.*)", "destination": { "service": "frontend" } }
   ]

@@ -101,6 +101,8 @@ export default function Page() {
     setResult("")
     setCopied(false)
 
+    let blobUrl: string | null = null
+
     try {
       if (mode === "file") {
         if (!file) {
@@ -119,7 +121,7 @@ export default function Page() {
         }
         if (uploadFile.size > MAX_DIRECT_UPLOAD) {
           toast.info("Uploading via Blob storage\u2026")
-          const blobUrl = await uploadToBlob(uploadFile)
+          blobUrl = await uploadToBlob(uploadFile)
           toast.info("File uploaded, converting\u2026")
           const res = await fetch(`${API}/api/convert/blob`, {
             method: "POST",
@@ -179,6 +181,13 @@ export default function Page() {
       toast.error(err instanceof Error ? err.message : "Conversion failed")
     } finally {
       setLoading(false)
+      if (blobUrl) {
+        fetch("/api/blob/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ blob_url: blobUrl }),
+        }).catch(() => {})
+      }
     }
   }
 
